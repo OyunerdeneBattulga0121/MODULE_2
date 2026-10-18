@@ -7,7 +7,7 @@ run these commands
 - python main.py
 
 
-Bie_Daalt/
+"Bie_Daalt/
 │
 ├── 2023/                  # Анхдагч дата файлууд
 ├── 2024/
@@ -19,7 +19,4 @@ Bie_Daalt/
 │   └── statistics.py      # Статистик тооцоолох ...etc
 │
 ├── main.py                # Бүх жилийн датаг нэгтгэн удирдах үндсэн файл
-└── create_csv.py          # CSV руу хөрвүүлэх файл
-
-
-https://www.jwilber.me/permutationtest/
+└── create_csv.py          # CSV руу хөрвүүлэх файл"
