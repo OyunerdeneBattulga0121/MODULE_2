@@ -1,13 +1,24 @@
 """
-АХС-2024: Ажиллах хүчний бүтэц ба цалингийн шинжилгээ
-Ажиллуулах: python lfs_2024_analysis.py [data.csv] [гаралтын_хавтас]
-Шаардлага: pandas, numpy, matplotlib
+-----------Анхаарах зүйл--------------
+Ажилгүйдлийн тодорхойлолт. Үндсэн тооцоонд "ажиллагч биш + сүүлийн 30 хоногт ажил хайсан" гэж авсан. 
+Ирэх 14 хоногт ажиллахад бэлэн байхыг нэмж шаардвал ILO-ийн хатуу ажилгүйдэл 0.4% болж огцом буурна. 
+Скрипт хоёуланг хэвлэнэ, танай тайланд аль нь байсныг шалгаарай.
+
+Цалингийн тооцоо. Зөвхөн сарын хугацаатай, бэлэн мөнгөөр авсан, 0-ээс их цалинг авсан. 
+Нэмэлт шалгалтаар тайланд байсан 2025 оны үр дүнтэй (эмэгтэй 25% бага) энэ жил нэлээд ялгаатай гарсан 
+тул f03 шүүлтүүрийг тайландаа ижил байлгахыг хүсвэл миний wage шүүлтийг (5-р хэсэг) тааруулаарай.
+
+Бага бүлэг. Доктор (n=41), 65+ нас (n=69), Боловсролгүй (n=74) гэх мэт бүлгийн дүн найдвар багатай.
+
+Мэргэжил кодоор байгаа тул (e02c) шинжилгээнд оруулаагүй.
 """
+
 import sys
 import os
 import numpy as np  # type: ignore
 import pandas as pd # type: ignore
 import matplotlib.pyplot as plt # type: ignore
+import nemelt
 
 CSV = sys.argv[1] if len(sys.argv) > 1 else "data.csv"
 OUT = sys.argv[2] if len(sys.argv) > 2 else "outputs_2024"
@@ -228,3 +239,5 @@ t_sex.to_csv(f"{OUT}/table_wage_sex.csv", encoding="utf-8-sig")
 t_edu.to_csv(f"{OUT}/table_wage_edu.csv", encoding="utf-8-sig")
 t_age.to_csv(f"{OUT}/table_wage_age.csv", encoding="utf-8-sig")
 print(f"Графикууд болон хүснэгтүүд '{OUT}/' хавтсанд хадгалагдлаа.")
+
+nemelt.run_additional_analysis(df, wage, OUT)
