@@ -8,8 +8,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from aiaa_eda_tools_team_4.cleaning import missing_report
-from aiaa_eda_tools_team_4.stats import basic_stats, group_stats, labour_rates, iqr_bounds
+from aiaa_eda_tools_team_4.cleaning import (missing_report, iqr_outliers, basic_stats,
+                                            group_rate, labour_indicators)
+from aiaa_eda_tools_team_4.stats import group_stats, iqr_bounds
 from aiaa_eda_tools_team_4.plots import plot_hist, plot_bar, plot_box, plot_line, plot_corr
 
 # Settings for this year's data (column names differ between survey years)
@@ -96,13 +97,13 @@ print(f"\nQ1: {b['q1']}  Q3: {b['q3']}  IQR: {b['iqr']}")
 print(f"Lower bound: {b['lower']}  Upper bound: {b['upper']}")
 print("Low outliers:", (wage["f02"] < b["lower"]).sum())
 print("High outliers:", (wage["f02"] > b["upper"]).sum())
+print("All outliers (iqr_outliers):", len(iqr_outliers(wage["f02"])))
 
 
 # 4. Wage distribution (thousand MNT)
 
 section("4. Wage distribution (thousand MNT)")
-for name, value in basic_stats(wage["f02"]).items():
-    print(f"{name}: {value}")
+print(basic_stats(wage, ["f02"]).T)
 print("Mode:", wage["f02"].mode()[0])
 print("Variance:", round(wage["f02"].var(), 1))
 print("Range:", np.ptp(wage["f02"]))
@@ -136,14 +137,29 @@ search = any_yes(lf, ["h01a", "h01b", "h02"])                 # looked for work
 avail = any_yes(lf, ["h10", "h11"])                           # available to work
 unemployed = ~employed & search & avail
 
-lf["status"] = np.select([employed, unemployed], ["Employed", "Unemployed"], default="Outside")
+lf["status"] = np.select([employed, unemployed], ["employed", "unemployed"], default="outside")
+lf["total"] = "All 15+"
+lf["age_group"] = pd.cut(lf["a05"], bins=AGE_BINS, labels=AGE_LABELS, right=False)
 print(pd.crosstab(lf["sex"], lf["status"], margins=True))
 
-print("\nTotal:")
-print(labour_rates(lf))
-lf_sex = lf.groupby("sex")[["status"]].apply(labour_rates)
-print("\nBy sex:")
+# lfpr = participation, emp_rate = employment, unemp_rate = unemployment (%)
+print("\nTotal (sample, unweighted):")
+print(labour_indicators(lf, "total", status="status"))
+print("\nTotal (population, weighted):")
+print(labour_indicators(lf, "total", status="status", weight=WEIGHT_COL))
+
+lf_sex = labour_indicators(lf, "sex", status="status", weight=WEIGHT_COL)
+print("\nBy sex (weighted):")
 print(lf_sex)
+print("\nBy age group (weighted):")
+print(labour_indicators(lf, "age_group", status="status", weight=WEIGHT_COL))
+
+# Unemployment rate by aimag: only people in the labour force, weighted
+labour = lf[lf["status"] != "outside"].copy()
+labour["unemployed"] = (labour["status"] == "unemployed").astype(int)
+print("\nUnemployment rate by aimag (weighted):")
+print(group_rate(labour, "axcaimagcode", "unemployed", weight=WEIGHT_COL)
+      .sort_values("rate_pct", ascending=False).to_string(index=False))
 
 
 # 7. Save charts (every plot function from the library's plots.py)
@@ -151,11 +167,14 @@ print(lf_sex)
 section("7. Charts")
 sex_colors = {"Male": "steelblue", "Female": "orange"}
 
-# plot_bar: the 3 labour force rates, male vs female
-rates_long = lf_sex.reset_index().melt(id_vars="sex", var_name="indicator", value_name="rate")
+# plot_bar: the 3 labour force rates (weighted), male vs female
+rates_long = (lf_sex.rename(columns={"lfpr": "Participation %", "unemp_rate": "Unemployment %",
+                                     "emp_rate": "Employment %"})
+              .melt(id_vars="sex", value_vars=["Participation %", "Unemployment %", "Employment %"],
+                    var_name="indicator", value_name="rate"))
 plot_bar(rates_long, x="indicator", y="rate", hue="sex", palette=sex_colors,
          path=OUT_DIR / "bar_labour_rates_sex.png", ylim=(0, 100),
-         title=f"Labour force rates by sex ({YEAR})",
+         title=f"Labour force rates by sex, weighted ({YEAR})",
          xlabel="", ylabel="Rate (%)", show=False)
 
 # plot_box: wage spread for each education level (y cut at 1.5x the IQR upper bound)
