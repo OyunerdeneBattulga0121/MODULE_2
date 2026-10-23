@@ -8,14 +8,19 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from aiaa_eda_tools_team_4.cleaning import (missing_report, iqr_outliers, basic_stats,
-                                            group_rate, labour_indicators)
-from aiaa_eda_tools_team_4.stats import group_stats, iqr_bounds
-from aiaa_eda_tools_team_4.plots import plot_hist, plot_bar, plot_box, plot_line, plot_corr
+try:
+    from aiaa_eda_tools_team_4.cleaning import (missing_report, iqr_outliers, basic_stats,
+                                                group_rate, labour_indicators)
+    from aiaa_eda_tools_team_4.stats import group_stats, iqr_bounds
+    from aiaa_eda_tools_team_4.plots import plot_hist, plot_bar, plot_box, plot_line, plot_corr
+except ImportError as e:
+    raise SystemExit(f"The library is missing or too old ({e}).\n"
+                     "Fix: py -m pip install --upgrade aiaa-eda-tools-team-4")
 
 # Settings for this year's data (column names differ between survey years)
 YEAR = 2023
 WEIGHT_COL = "weight_cal_Y"
+SHOW_PLOTS = True   # open each chart in a window (close it to see the next one)
 PERSON_KEY = ["psu", "ssu", "quarter", "p01"]   # columns that identify one person
 
 DATA_PATH = Path(__file__).resolve().parent / "data.csv"
@@ -110,7 +115,7 @@ print("Range:", np.ptp(wage["f02"]))
 
 plot_hist(wage, "f02", path=OUT_DIR / "hist_wage.png", bins=50,
           title=f"Monthly wage distribution ({YEAR})",
-          xlabel="Monthly wage (thousand MNT)", ylabel="Number of people", show=False)
+          xlabel="Monthly wage (thousand MNT)", ylabel="Number of people", show=SHOW_PLOTS)
 
 
 # 5. Wages by group: sex, education, age
@@ -175,13 +180,13 @@ rates_long = (lf_sex.rename(columns={"lfpr": "Participation %", "unemp_rate": "U
 plot_bar(rates_long, x="indicator", y="rate", hue="sex", palette=sex_colors,
          path=OUT_DIR / "bar_labour_rates_sex.png", ylim=(0, 100),
          title=f"Labour force rates by sex, weighted ({YEAR})",
-         xlabel="", ylabel="Rate (%)", show=False)
+         xlabel="", ylabel="Rate (%)", show=SHOW_PLOTS)
 
 # plot_box: wage spread for each education level (y cut at 1.5x the IQR upper bound)
 plot_box(wage, x="education", y="f02", order=EDU_ORDER, rotate=40,
          ylim=(0, b["upper"] * 1.5), path=OUT_DIR / "box_wage_edu.png",
          title=f"Monthly wage by education ({YEAR})",
-         xlabel="", ylabel="Monthly wage (thousand MNT)", show=False)
+         xlabel="", ylabel="Monthly wage (thousand MNT)", show=SHOW_PLOTS)
 
 # plot_line: median wage across age groups, one line per sex
 age_sex = group_stats(wage, ["age_group", "sex"], "f02").reset_index()
@@ -189,12 +194,12 @@ age_sex["age_group"] = age_sex["age_group"].astype(str)
 plot_line(age_sex, x="age_group", y="median", hue="sex", palette=sex_colors,
           path=OUT_DIR / "line_wage_age_sex.png",
           title=f"Median monthly wage by age and sex ({YEAR})",
-          xlabel="Age group", ylabel="Median wage (thousand MNT)", show=False)
+          xlabel="Age group", ylabel="Median wage (thousand MNT)", show=SHOW_PLOTS)
 
 # plot_corr: how wage, age and working hours move together
 numeric = wage[["f02", "a05", "g01t", "g02t"]].rename(columns={
     "f02": "Wage", "a05": "Age", "g01t": "Usual hours/week", "g02t": "Actual hours/week"})
 plot_corr(numeric, path=OUT_DIR / "corr_wage_age_hours.png",
-          title=f"Correlation: wage, age, hours ({YEAR})", show=False)
+          title=f"Correlation: wage, age, hours ({YEAR})", show=SHOW_PLOTS)
 
 print("Charts saved to:", OUT_DIR)
