@@ -1,0 +1,15 @@
+# Гишүүн 4
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aiaa-eda-tools-team-4"
+version = "0.1.1"
+description = "AI Academy Asia: EDA хийх туслах функцууд"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["pandas", "numpy", "matplotlib", "seaborn"]
+
+[tool.setuptools]
+packages = ["aiaa_eda_tools_team_4"]          # зөвхөн энэ хавтас сан болно
