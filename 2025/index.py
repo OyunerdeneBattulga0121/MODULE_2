@@ -10,7 +10,7 @@ import pandas as pd
 
 from aiaa_eda_tools_team_4.cleaning import missing_report
 from aiaa_eda_tools_team_4.stats import basic_stats, group_stats, labour_rates, iqr_bounds
-from aiaa_eda_tools_team_4.plots import plot_hist, plot_bar
+from aiaa_eda_tools_team_4.plots import plot_hist, plot_bar, plot_box, plot_line, plot_corr
 
 # Settings for this year's data (column names differ between survey years)
 YEAR = 2025
@@ -146,22 +146,36 @@ print("\nBy sex:")
 print(lf_sex)
 
 
-# 7. Save charts
+# 7. Save charts (every plot function from the library's plots.py)
 
 section("7. Charts")
-plot_bar(lf_sex.reset_index(), x="sex", y="Participation %", order=SEXES,
-         path=OUT_DIR / "bar_participation.png", ylim=(0, 100),
-         title=f"Labour force participation by sex ({YEAR})",
-         xlabel="", ylabel="Participation rate (%)", show=False)
+sex_colors = {"Male": "steelblue", "Female": "orange"}
 
-plot_bar(sex.reset_index(), x="sex", y="median", order=SEXES,
-         path=OUT_DIR / "bar_wage_sex.png",
-         title=f"Median monthly wage by sex ({YEAR})",
-         xlabel="", ylabel="Median wage (thousand MNT)", show=False)
+# plot_bar: the 3 labour force rates, male vs female
+rates_long = lf_sex.reset_index().melt(id_vars="sex", var_name="indicator", value_name="rate")
+plot_bar(rates_long, x="indicator", y="rate", hue="sex", palette=sex_colors,
+         path=OUT_DIR / "bar_labour_rates_sex.png", ylim=(0, 100),
+         title=f"Labour force rates by sex ({YEAR})",
+         xlabel="", ylabel="Rate (%)", show=False)
 
-plot_bar(edu.reset_index(), x="education", y="median", order=EDU_ORDER, rotate=40,
-         path=OUT_DIR / "bar_wage_edu.png",
-         title=f"Median monthly wage by education ({YEAR})",
-         xlabel="", ylabel="Median wage (thousand MNT)", show=False)
+# plot_box: wage spread for each education level (y cut at 1.5x the IQR upper bound)
+plot_box(wage, x="education", y="f02", order=EDU_ORDER, rotate=40,
+         ylim=(0, b["upper"] * 1.5), path=OUT_DIR / "box_wage_edu.png",
+         title=f"Monthly wage by education ({YEAR})",
+         xlabel="", ylabel="Monthly wage (thousand MNT)", show=False)
+
+# plot_line: median wage across age groups, one line per sex
+age_sex = group_stats(wage, ["age_group", "sex"], "f02").reset_index()
+age_sex["age_group"] = age_sex["age_group"].astype(str)
+plot_line(age_sex, x="age_group", y="median", hue="sex", palette=sex_colors,
+          path=OUT_DIR / "line_wage_age_sex.png",
+          title=f"Median monthly wage by age and sex ({YEAR})",
+          xlabel="Age group", ylabel="Median wage (thousand MNT)", show=False)
+
+# plot_corr: how wage, age and working hours move together
+numeric = wage[["f02", "a05", "g01t", "g02t"]].rename(columns={
+    "f02": "Wage", "a05": "Age", "g01t": "Usual hours/week", "g02t": "Actual hours/week"})
+plot_corr(numeric, path=OUT_DIR / "corr_wage_age_hours.png",
+          title=f"Correlation: wage, age, hours ({YEAR})", show=False)
 
 print("Charts saved to:", OUT_DIR)
