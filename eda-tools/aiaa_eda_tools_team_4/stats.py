@@ -41,3 +41,10 @@ def labour_rates(df, status_col="status", employed="Employed", unemployed="Unemp
         "Unemployment %": percent(n_unemp, labour),
         "Employment %": percent(n_emp, len(df)),
     })
+
+# Q1, Q3, IQR and the outlier bounds (k=1.5 is the standard rule)
+def iqr_bounds(x, k=1.5):
+    q1, q3 = np.percentile(x, [25, 75])
+    iqr = q3 - q1
+    return {"q1": float(q1), "q3": float(q3), "iqr": float(iqr),
+            "lower": float(q1 - k * iqr), "upper": float(q3 + k * iqr)}
