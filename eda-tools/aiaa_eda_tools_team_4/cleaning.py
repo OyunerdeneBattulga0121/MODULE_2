@@ -18,27 +18,6 @@ def iqr_outliers(x):
     iqr = q3 - q1
     return x[(x < q1 - 1.5 * iqr) | (x > q3 + 1.5 * iqr)]
 
-"""Тоон шинжилгээний функцууд (Гишүүн 1)."""
-import numpy as np
-import pandas as pd
-
-
-def basic_stats(df: pd.DataFrame, cols=None) -> pd.DataFrame:
-    """n, дутуу, дундаж, медиан, std (ddof=1), min, Q1, Q3, max, хазгай."""
-    num = df[cols] if cols is not None else df.select_dtypes("number")
-    out = pd.DataFrame({
-        "n": num.count(),
-        "missing": num.isna().sum(),
-        "mean": num.mean(),
-        "median": num.median(),
-        "std": num.std(),
-        "min": num.min(),
-        "q1": num.quantile(0.25),
-        "q3": num.quantile(0.75),
-        "max": num.max(),
-        "skew": num.skew(),
-    })
-    return out.round(2)
 
 
 def group_rate(df: pd.DataFrame, by, flag: str, weight: str = None) -> pd.DataFrame:
